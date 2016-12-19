@@ -6,7 +6,7 @@ The Vagrantfile defines 3 VMs:
 - DTR: A VM with Docker Trusted Registry installed
 - worker: a worker node that is joined to the UCP cluster.
 
-The Vagrantfile will be extended with 2 additional UCP nodes to experiemnt with failover and restoring from backups.
+The Vagrantfile will be extended with 2 additional UCP nodes to experiment with failover and restoring from backups.
 The cluster will be used to deploy a 3-tier application.
 
 
