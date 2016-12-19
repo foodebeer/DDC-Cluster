@@ -48,7 +48,7 @@ config.vm.define "ucp", primary: true do |ucp|
   # Create a forwarded port mapping which allows access to a specific port
   # within the machine from a port on the host machine. In the example below,
   # accessing "localhost:8080" will access port 80 on the guest machine.
-  ucp.vm.network "forwarded_port", guest: 80, host: 8080
+  #ucp.vm.network "forwarded_port", guest: 443, host: 8080
 
   ucp.vm.provision "shell", inline: <<-SHELL
       apt-get update && apt-get upgrade -y
@@ -77,7 +77,7 @@ config.vm.define "ucp", primary: true do |ucp|
   # Create a forwarded port mapping which allows access to a specific port
   # within the machine from a port on the host machine. In the example below,
   # accessing "localhost:8080" will access port 80 on the guest machine.
-  dtr0.vm.network "forwarded_port", guest: 80, host: 8090
+  #dtr0.vm.network "forwarded_port", guest: 80, host: 8090
 
   dtr0.vm.provision "shell", inline: <<-SHELL
       apt-get update && apt-get upgrade -y
@@ -89,7 +89,7 @@ config.vm.define "ucp", primary: true do |ucp|
       apt-get update && apt-get install -y docker-engine
       usermod -a -G docker ubuntu
       echo "Now installing DTR"
-      docker run --rm --tty --name dtr -p 80:80 -v /var/run/docker.sock:/var/run/docker.sock docker/dtr install --ucp-url http://192.168.33.10:8080 --ucp-node ucp --dtr-external-ip 192.168.33.11  --ucp-username 'moby' --ucp-password 'd!ck1234' --ucp-insecure-tls
+      docker run --rm --tty --name dtr -p 80:80 -v /var/run/docker.sock:/var/run/docker.sock docker/dtr install --ucp-url https://192.168.33.10:8080 --ucp-node ucp --dtr-external-url https://192.168.33.20  --ucp-username 'moby' --ucp-password 'd!ck1234' --ucp-insecure-tls
     SHELL
   end
 
@@ -118,7 +118,7 @@ config.vm.define "ucp", primary: true do |ucp|
   #    apt-get update && apt-get install -y docker-engine
   #    usermod -a -G docker ubuntu
   #    echo "Now installing DTR"
-  #    docker run --rm -it --name dtr -p 80:80 -v /var/run/docker.sock:/var/run/docker.sock docker/dtr install --ucp-url http://192.168.33.10:8080 --ucp-node ucp --dtr-external-ip 192.168.33.11  --ucp-username 'moby' --ucp-password 'd!ck1234' --ucp-insecure-tls
+  #    docker run --rm -it --name dtr -p 80:80 -v /var/run/docker.sock:/var/run/docker.sock docker/dtr install --ucp-url https://192.168.33.10 --ucp-node ucp --dtr-external-url https://192.168.33.21  --ucp-username 'moby' --ucp-password 'd!ck1234' --ucp-insecure-tls
   #  SHELL
   #end
 
@@ -147,7 +147,7 @@ config.vm.define "ucp", primary: true do |ucp|
   #    apt-get update && apt-get install -y docker-engine
   #    usermod -a -G docker ubuntu
   #    echo "Now installing DTR"
-  #    docker run --rm -it --name dtr -p 80:80 -v /var/run/docker.sock:/var/run/docker.sock docker/dtr install --ucp-url http://192.168.33.10:8080 --ucp-node ucp --dtr-external-ip 192.168.33.11  --ucp-username 'moby' --ucp-password 'd!ck1234' --ucp-insecure-tls
+  #    docker run --rm -it --name dtr -p 80:80 -v /var/run/docker.sock:/var/run/docker.sock docker/dtr install --ucp-url https://192.168.33.10 --ucp-node ucp --dtr-external-url https://192.168.33.22  --ucp-username 'moby' --ucp-password 'd!ck1234' --ucp-insecure-tls
   #  SHELL
   #end
 
@@ -176,7 +176,6 @@ config.vm.define "ucp", primary: true do |ucp|
       echo "deb https://packages.docker.com/1.12/apt/repo ubuntu-xenial main" | tee /etc/apt/sources.list.d/docker.list
       apt-get update && apt-get install -y docker-engine
       usermod -a -G docker ubuntu
-      #docker run --rm -it --name ucp -p 80:80 -v /var/run/docker.sock:/var/run/docker.sock docker/ucp install --host-address 192.168.33.10 --admin-username 'moby' --admin-password 'd!ck1234'
     SHELL
   end
 end
