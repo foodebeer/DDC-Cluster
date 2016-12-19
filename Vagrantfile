@@ -33,12 +33,13 @@ Vagrant.configure("2") do |config|
   #
   # View the documentation for the provider you are using for more
   # information on available options.
+  jointoken = {"JOINTOKEN" => "-"}
 
 # ***************** Define UCP machine @ 192.168.33.10 ***********************
 config.vm.define "ucp", primary: true do |ucp|
 
   config.vm.provider "virtualbox" do |vb|
-    vb.memory = "3072"
+    vb.memory = "4096"
   end
 
   # Create a private network, which allows host-only access to the machine
@@ -49,9 +50,14 @@ config.vm.define "ucp", primary: true do |ucp|
   # Create a forwarded port mapping which allows access to a specific port
   # within the machine from a port on the host machine. In the example below,
   # accessing "localhost:8080" will access port 80 on the guest machine.
-  #ucp.vm.network "forwarded_port", guest: 443, host: 8080
+  #ucp.vm.network "forwarded_port", guest: 4443, host: 8080
 
-  ucp.vm.provision "shell", inline: <<-SHELL
+  ucp.vm.provision "shell" do |s| 
+    puts "Provisioning UCP"
+    puts "jointoken: #{jointoken}"
+    s.env = jointoken
+    puts "s.env: #{s.env}"
+    s.inline = <<-SHELL
       apt-get update && apt-get upgrade -y
       apt-get install -y curl
       curl -s 'https://sks-keyservers.net/pks/lookup?op=get&search=0xee6d536cf7dc86e2d7d56f59a178ac6c6238f52e' | apt-key add --import
@@ -61,27 +67,34 @@ config.vm.define "ucp", primary: true do |ucp|
       apt-get update && apt-get install -y docker-engine
       usermod -a -G docker ubuntu
       echo "Now installing UCP"
-      docker run --rm --tty --name ucp -p 80:80 -p 443:443 -v /var/run/docker.sock:/var/run/docker.sock docker/ucp install --host-address 192.168.33.10 --admin-username 'moby' --admin-password 'd!ck1234'
+      docker run --rm --tty --name ucp -p 8080:80 -p 4443:443 -v /var/run/docker.sock:/var/run/docker.sock docker/ucp install --host-address 192.168.33.10 --admin-username 'moby' --admin-password 'd!ck1234'
+      echo "JoinToken: $JOINTOKEN"
+      export JOINTOKEN=`docker swarm join-token -q worker`
+      echo "JoinToken: $JOINTOKEN"
     SHELL
   end
+  puts "After provisioning UCP"
+  end
 
+puts "Provisioning DTR with jointoken: #{jointoken}"
 # ***************** Define DTR0 machine @ 192.168.33.20 ***********************
-  config.vm.define "dtr0" do |dtr0|
+(0..1).each do |i|
+  config.vm.define "dtr#{i}" do |dtr|
 
   config.vm.provider "virtualbox" do |vb|
     vb.memory = "3072"
   end
   # Create a private network, which allows host-only access to the machine
   # using a specific IP.
-  dtr0.vm.network "private_network", ip: "192.168.33.20"
-  dtr0.vm.hostname = "dtr0"
+  dtr.vm.network "private_network", ip: "192.168.33.2#{i}"
+  dtr.vm.hostname = "dtr#{i}"
 
   # Create a forwarded port mapping which allows access to a specific port
   # within the machine from a port on the host machine. In the example below,
   # accessing "localhost:8080" will access port 80 on the guest machine.
-  #dtr0.vm.network "forwarded_port", guest: 80, host: 8090
+  #dtr.vm.network "forwarded_port", guest: 80, host: 8090
 
-  dtr0.vm.provision "shell", inline: <<-SHELL
+  dtr.vm.provision "shell", inline: <<-SHELL
       apt-get update && apt-get upgrade -y
       apt-get install -y curl
       curl -s 'https://sks-keyservers.net/pks/lookup?op=get&search=0xee6d536cf7dc86e2d7d56f59a178ac6c6238f52e' | apt-key add --import
@@ -90,71 +103,15 @@ config.vm.define "ucp", primary: true do |ucp|
       echo "deb https://packages.docker.com/1.12/apt/repo ubuntu-xenial main" | tee /etc/apt/sources.list.d/docker.list
       apt-get update && apt-get install -y docker-engine
       usermod -a -G docker ubuntu
+      echo "Joning UCP cluster"
+
       echo "Now installing DTR"
-      docker run --rm --tty --name dtr -p 80:80 -p 443:443 -v /var/run/docker.sock:/var/run/docker.sock docker/dtr install --ucp-url https://192.168.33.10 --dtr-external-url https://192.168.33.20  --ucp-username 'moby' --ucp-password 'd!ck1234' --ucp-insecure-tls
+      docker run --rm --tty --name dtr -p 80:80 -p 443:443 -v /var/run/docker.sock:/var/run/docker.sock docker/dtr install --ucp-url https://192.168.33.10 --dtr-external-url https://192.168.33.2#{i}  --ucp-node dtr#{i} --ucp-username 'moby' --ucp-password 'd!ck1234' --ucp-insecure-tls
     SHELL
   end
+  end
 
-  # ***************** Define DTR machine ***********************
-  #config.vm.define "dtr1" do |dtr1|
-
-  #config.vm.provider "virtualbox" do |vb|
-  #  vb.memory = "3072"
-  #end
-  # Create a private network, which allows host-only access to the machine
-  # using a specific IP.
-  #dtr1.vm.network "private_network", ip: "192.168.33.21"
-  #dtr1.vm.hostname = "dtr1"
-
-  # Create a forwarded port mapping which allows access to a specific port
-  # within the machine from a port on the host machine. In the example below,
-  # accessing "localhost:8080" will access port 80 on the guest machine.
-  #dtr1.vm.network "forwarded_port", guest: 80, host: 8091
-
-  #dtr1.vm.provision "shell", inline: <<-SHELL
-  #    apt-get update && apt-get upgrade -y
-  #    apt-get install -y curl
-  #    curl -s 'https://sks-keyservers.net/pks/lookup?op=get&search=0xee6d536cf7dc86e2d7d56f59a178ac6c6238f52e' | apt-key add --import
-  #    apt-get update && apt-get -y install apt-transport-https
-  #    apt-get install -y linux-image-extra-virtual
-  #    echo "deb https://packages.docker.com/1.12/apt/repo ubuntu-xenial main" | tee /etc/apt/sources.list.d/docker.list
-  #    apt-get update && apt-get install -y docker-engine
-  #    usermod -a -G docker ubuntu
-  #    echo "Now installing DTR"
-  #    docker run --rm -it --name dtr -p 80:80 -p 443:443 -v /var/run/docker.sock:/var/run/docker.sock docker/dtr install --ucp-url https://192.168.33.10 --dtr-external-url https://192.168.33.21  --ucp-username 'moby' --ucp-password 'd!ck1234' --ucp-insecure-tls
-  #  SHELL
-  #end
-
-  # ***************** Define DTR machine ***********************
-  #config.vm.define "dtr2" do |dtr2|
-
-  #config.vm.provider "virtualbox" do |vb|
-  #  vb.memory = "3072"
-  #end
-  # Create a private network, which allows host-only access to the machine
-  # using a specific IP.
-  #dtr2.vm.network "private_network", ip: "192.168.33.22"
-  #dtr2.vm.hostname = "dtr2"
-
-  # Create a forwarded port mapping which allows access to a specific port
-  # within the machine from a port on the host machine. In the example below,
-  # accessing "localhost:8080" will access port 80 on the guest machine.
-  #dtr2.vm.network "forwarded_port", guest: 80, host: 8092
-
-  #dtr2.vm.provision "shell", inline: <<-SHELL
-  #    apt-get update && apt-get upgrade -y
-  #    apt-get install -y curl
-  #    curl -s 'https://sks-keyservers.net/pks/lookup?op=get&search=0xee6d536cf7dc86e2d7d56f59a178ac6c6238f52e' | apt-key add --import
-  #    apt-get update && apt-get -y install apt-transport-https
-  #    apt-get install -y linux-image-extra-virtual
-  #    echo "deb https://packages.docker.com/1.12/apt/repo ubuntu-xenial main" | tee /etc/apt/sources.list.d/docker.list
-  #    apt-get update && apt-get install -y docker-engine
-  #    usermod -a -G docker ubuntu
-  #    echo "Now installing DTR"
-  #    docker run --rm -it --name dtr -p 80:80 -p 443:443 -v /var/run/docker.sock:/var/run/docker.sock docker/dtr install --ucp-url https://192.168.33.10 --dtr-external-url https://192.168.33.22  --ucp-username 'moby' --ucp-password 'd!ck1234' --ucp-insecure-tls
-  #  SHELL
-  #end
-
+  
 # ***************** Define Worker node ***********************
   config.vm.define "worker" do |worker|
 
