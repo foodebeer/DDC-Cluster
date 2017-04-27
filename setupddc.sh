@@ -35,7 +35,7 @@ docker-machine ssh ucp0 docker service create \
 
   # Worker nodes
 echo "***************** Creating and joining $3 ACC worker nodes to Swarm cluster"
-rm swarnodes
+rm swarmnodes
 #COUNT = 0
 for (( COUNT=0; COUNT < $3; COUNT++))
 do
