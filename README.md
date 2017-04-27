@@ -14,8 +14,8 @@ setupddc.sh 1 1 2 will create a Swarm cluster with 1 manager running UCP, 1 work
 setupddc.sh will put 3 files in your working directory:
 It creates 1 file in your working directory 'swarmnodes' which you can use to delete the Docker Machines you just created.
 
-UCP admin name is set in environment variable UCPADMIN, if not set it is by default 'moby'.
-UCP password is set in environment variable UCPADMIN, if not set it is by default 'd!ck1234'.
+UCP admin name is set in environment variable UCP_ADMIN, if not set it is by default 'moby'.
+UCP password is set in environment variable UCP_PASSWORD, if not set it is by default 'd!ck1234'.
 
 Since DTR takes a loooooooong time to install, it frequently times out. You can get around this by running
   setupddc.sh 1 0 2 
