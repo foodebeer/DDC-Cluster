@@ -88,7 +88,7 @@ else
         docker-machine ssh ucp0 docker run --rm --tty -p 809$COUNT:80 844$COUNT:443 docker/dtr join --debug --ucp-node dtr$COUNT --ucp-insecure-tls --ucp-url https://$(docker-machine ip ucp0):9443 --ucp-username $UCP_ADMIN --ucp-password $UCP_PASSWORD --existing-replica-id 1234567890AB --replica-http-port "809$COUNT" --replica-https-port "844$COUNT" --replica-id AB000000000$COUNT
     done
 
-    if [ $? -ne 0]; then
+    if [ $? -ne 0 ]; then
         echo "Something went wrong"
         exit $?
     else
