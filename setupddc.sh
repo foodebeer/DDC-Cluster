@@ -77,7 +77,7 @@ else
     docker-machine ssh dtr0 docker swarm join --token $(docker-machine ssh ucp0 docker swarm join-token -q worker) $(docker-machine ip ucp0)
     echo "--------------- Installing DTR -----------"
     # Install DTR
-    docker-machine ssh ucp0 docker run --rm --tty --name dtr docker/dtr install --debug --ucp-url https://$(docker-machine ip ucp0):9443 --dtr-external-url https://$(docker-machine ip dtr0):8443  --replica-https-port "8443" --ucp-node dtr0 --ucp-username $UCP_ADMIN --ucp-password $UCP_PASSWORD --ucp-insecure-tls --replica-id AB0000000000
+    docker-machine ssh ucp0 docker run --rm --tty --name dtr docker/dtr install --debug --ucp-url https://$(docker-machine ip ucp0):9443 --dtr-external-url https://$(docker-machine ip dtr0):8443  --replica-http-port "8090"--replica-https-port "8443" --ucp-node dtr0 --ucp-username $UCP_ADMIN --ucp-password $UCP_PASSWORD --ucp-insecure-tls --replica-id AB0000000000
 
     echo "--------------- Installing DTR nodes -------------"
     for (( COUNT=1; COUNT \< $2; COUNT++))
