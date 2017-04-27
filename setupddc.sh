@@ -6,6 +6,14 @@ if [ "$1" == "" ]; then
 	exit 1
 fi
 
+if [ "UCPADMIN" == "" ]; then
+	UCPADMIN = "moby"
+fi
+
+if [ "UCPPWD" == "" ]; then
+	UCPADMIN = "d!ck1234"
+fi
+
 # Set up UCP HA
 echo "******************** Creating UCP cluster"
 docker-machine create -d virtualbox --virtualbox-memory "4096" ucp0 && docker-machine ssh ucp0 docker swarm init --advertise-addr $(docker-machine ip ucp0)
@@ -47,14 +55,14 @@ docker-machine ssh dtr0 docker swarm join --token $(docker-machine ssh ucp0 dock
 echo "--------------- Installing DTR -----------"
 # Install DTR
 #docker-machine ssh dtr0 docker run --rm --tty --name dtr -p 8081:80 -p 4444:443 -P -v /var/run/docker.sock:/var/run/docker.sock docker/dtr install --ucp-url https://$(docker-machine ip ucp0) --dtr-external-url https://$(docker-machine ip dtr0)  --ucp-node dtr0 --ucp-username 'moby' --ucp-password 'd!ck1234' --ucp-insecure-tls --replica-id 1234567890AB
-docker-machine ssh dtr0 docker run --rm --tty --name dtr -p 8090:80 -p 8440:443 docker/dtr install --ucp-url https://$(docker-machine ip ucp0) --dtr-external-url https://$(docker-machine ip dtr0)  --ucp-node dtr0 --ucp-username 'moby' --ucp-password 'd!ck1234' --ucp-insecure-tls --replica-id AB0000000000
+docker-machine ssh dtr0 docker run --rm --tty --name dtr -p 8090:80 -p 8440:443 docker/dtr install --ucp-url https://$(docker-machine ip ucp0) --dtr-external-url https://$(docker-machine ip dtr0)  --ucp-node dtr0 --ucp-username $UCPADMIN --ucp-password $UCPPWD --ucp-insecure-tls --replica-id AB0000000000
 
 echo "--------------- Installing DTR nodes -------------"
 for (( COUNT=1; COUNT \< $2; COUNT++))
 do
     echo "Create DTR node $COUNT"
     docker-machine create -d virtualbox --virtualbox-memory "3072" dtr$COUNT && docker-machine ssh dtr$COUNT docker swarm join --token $(docker-machine ssh ucp0 docker swarm join-token -q worker) $(docker-machine ip ucp0)
-    docker-machine ssh dtr$COUNT docker run --rm --tty -p 809$COUNT:80 844$COUNT:443 docker/dtr join --ucp-node dtr$COUNT --ucp-insecure-tls --ucp-url https://$(docker-machine ip ucp0) --ucp-username 'moby' --ucp-password 'd!ck1234' --existing-replica-id 1234567890AB --replica-http-port "809$COUNT" --replica-https-port "844$COUNT" --replica-id AB000000000$COUNT
+    docker-machine ssh dtr$COUNT docker run --rm --tty -p 809$COUNT:80 844$COUNT:443 docker/dtr join --ucp-node dtr$COUNT --ucp-insecure-tls --ucp-url https://$(docker-machine ip ucp0) --ucp-username $UCPADMIN --ucp-password $UCPPWD --existing-replica-id 1234567890AB --replica-http-port "809$COUNT" --replica-https-port "844$COUNT" --replica-id AB000000000$COUNT
 done
 
 
