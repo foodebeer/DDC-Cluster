@@ -1,15 +1,26 @@
 # DDC-Cluster
 This project contains files to set up and test a Docker DataCenter cluster.
 
-setupddc.sh creates a Docker Swarm cluster with Docker Enterprise Edition Standadr (Docker DataCenter).
+setupddc.sh creates a Docker Swarm cluster with Docker Enterprise Edition Standard (Docker DataCenter).
 
--- Old - doesn't really work, currently not in active development.
-The Vagrantfile defines 3 VMs:
-- UCP: A VM with Docker UCP installed
-- DTR: A VM with Docker Trusted Registry installed
-- worker: a worker node that is joined to the UCP cluster.
+Usage:
+setupddc.sh <number of UCP managers> <number of DTR nodes> <number of worker nodes>
 
-The Vagrantfile will be extended with 2 additional UCP nodes to experiment with failover and restoring from backups.
-The cluster will be used to deploy a 3-tier application.
+Don't forget to make the file executable with chmod +x setupddc.sh
 
+Example:
+setupddc.sh 1 1 2 will create a Swarm cluster with 1 manager running UCP, 1 worker node running DTR, and 2 worker nodes.
+
+setupddc.sh will put 3 files in your working directory:
+It creates 1 file in your working directory 'swarmnodes' which you can use to delete the Docker Machines you just created.
+
+UCP admin name is set in environment variable UCPADMIN, if not set it is by default 'moby'.
+UCP password is set in environment variable UCPADMIN, if not set it is by default 'd!ck1234'.
+
+Since DTR takes a loooooooong time to install, it frequently times out. You can get around this by running
+  setupddc.sh 1 0 2 
+then
+  setupddc.sh 0 1 0
+  
+ 
 
