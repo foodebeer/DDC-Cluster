@@ -22,7 +22,7 @@ fi
 
 if [ "$1" == "0" ]; then
 	echo "No UCP nodes specified, assuming existing UCP cluster"
-elif [ $(docker-machine ls -q ucp0) == "" ]; then
+elif [ $(docker-machine ls -q ucp0) == null ]; then
     echo "No existing UCP nodes specified, I need them so exiting"
     exit -1
 else
