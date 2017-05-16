@@ -19,12 +19,13 @@ if [ "$ENVWORKERLABEL" == "" ]; then
 fi
 
 #echo "Using $UCP_ADMIN and $UCP_PASSWORD"
-
+set UCP_EXISTS=$(docker-machine ls -q ucp0)
 if [ "$1" == "0" ]; then
 	echo "No UCP nodes specified, assuming existing UCP cluster"
-elif [ $(docker-machine ls -q ucp0) == null ]; then
-    echo "No existing UCP nodes specified, I need them so exiting"
-    exit -1
+    if [ -n "UCP_EXISTS" ]; then
+        echo "No existing UCP nodes specified, I need them so exiting"
+        exit -1
+    fi
 else
     # Set up UCP HA
     echo "******************** Creating UCP cluster"
