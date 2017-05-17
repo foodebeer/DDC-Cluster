@@ -1,9 +1,18 @@
-#!/bin/bash
+#!/bin/bash -x
 # DDC set up with Docker Machine
 echo Test $0 $1 $2 $3
 if [ "$1" == "" ]; then
 	echo "Usage setup.sh <number of UCP nodes> <number of DTR nodes> <number of worker node>"
 	exit 1
+fi
+if [[ ${1:-0} == 0 ]]; then
+    echo "0 UCP nodes"
+fi
+if [[ ${2:-0} == 0 ]]; then
+    echo "0 DTR nodes"
+fi
+if [[ ${3:-0} == 0 ]]; then
+    echo "0 worker nodes"
 fi
 
 if [ "$UCP_ADMIN" == "" ]; then
@@ -18,15 +27,19 @@ if [ "$ENVWORKERLABEL" == "" ]; then
 	ENVWORKERLABEL="Test"
 fi
 
+
+
 #echo "Using $UCP_ADMIN and $UCP_PASSWORD"
-set UCP_EXISTS=$(docker-machine ls -q ucp0)
-if [ "$1" == "0" ]; then
+UCP_EXISTS=$(docker-machine ls -q | grep -i ucp)
+echo $UCP_EXISTS
+if [ $1 == 0 ]; then
 	echo "No UCP nodes specified, assuming existing UCP cluster"
-    if [ -n "UCP_EXISTS" ]; then
+else
+    if [ -n $UCP_EXISTS ]; then
         echo "No existing UCP nodes specified, I need them so exiting"
         exit -1
     fi
-else
+    echo "Creating UCP cluster"
     # Set up UCP HA
     echo "******************** Creating UCP cluster"
     docker-machine create -d virtualbox --virtualbox-memory "4096" ucp0 && docker-machine ssh ucp0 docker swarm init --advertise-addr $(docker-machine ip ucp0)
@@ -42,15 +55,10 @@ else
     docker-machine ssh ucp0 docker run --rm --tty --name ucp -v /var/run/docker.sock:/var/run/docker.sock docker/ucp install --host-address $(docker-machine ip ucp0) --admin-username "${UCP_ADMIN}" --admin-password "${UCP_PASSWORD}" --swarm-port 2378 --controller-port 9443
 
     echo "Create vizualiser"
-    docker-machine ssh ucp0 docker service create \
-    --name=viz \
-    --publish=8082:8080/tcp \
-    --constraint=node.role==manager \
-    --mount=type=bind,src=/var/run/docker.sock,dst=/var/run/docker.sock \
-    manomarks/visualizer
+    docker-machine ssh ucp0 docker service create --name=viz --publish=8082:8080/tcp --constraint=node.role==manager --mount=type=bind,src=/var/run/docker.sock,dst=/var/run/docker.sock manomarks/visualizer
 fi
 
-if [ "$3" == "0" ]; then
+if [ $3 == 0 ]; then
 	echo "No worker nodes specified, skipping"
 else
     # Worker nodes
@@ -64,7 +72,7 @@ else
     done
 fi
 
-if [ "$2" == "0" ]; then
+if [ $2 == 0 ]; then
 	echo "No DTR nodes specified"
 
     echo "All done you now have a working DDC cluster. You can access UCP at https://$(docker-machine ip ucp0):9443, and the Visualiser at http://$(docker-machine ip ucp0):8082"
@@ -96,5 +104,3 @@ else
         echo "All done you now have a working DDC cluster. You can access UCP at https://$(docker-machine ip ucp0):9443, and DTR at https://$(docker-machine ip dtr0):8443 and the Visualiser at http://$(docker-machine ip ucp0):8082"
     fi
 fi
-
-
