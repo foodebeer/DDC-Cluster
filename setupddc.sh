@@ -1,7 +1,7 @@
-#!/bin/bash -x
+#!/bin/bash
 # DDC set up with Docker Machine
 echo Test $0 $1 $2 $3
-if [ "$1" == "" ]; then
+if [ $1 == "" ]; then
 	echo "Usage setup.sh <number of UCP nodes> <number of DTR nodes> <number of worker node>"
 	exit 1
 fi
@@ -104,3 +104,5 @@ else
         echo "All done you now have a working DDC cluster. You can access UCP at https://$(docker-machine ip ucp0):9443, and DTR at https://$(docker-machine ip dtr0):8443 and the Visualiser at http://$(docker-machine ip ucp0):8082"
     fi
 fi
+
+
