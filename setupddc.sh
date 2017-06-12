@@ -90,7 +90,7 @@ else
     echo "--------------- Installing DTR -----------"
     # Install DTR
     # Adden 20170612 Well crap, it seems that docker login doesn't accept a port number at the moment, so I'll install DTR at the default port 443 (HTTPS)
-    docker-machine ssh ucp0 docker run --rm --tty --name dtr docker/dtr install --debug --ucp-url https://$(docker-machine ip ucp0):9443 --dtr-external-url https://$(docker-machine ip dtr0):443  --replica-http-port 8090 --replica-https-port 8443 --ucp-node dtr0 --ucp-username "${UCP_ADMIN}" --ucp-password "${UCP_PASSWORD}" --ucp-insecure-tls --replica-id AB0000000000
+    docker-machine ssh ucp0 docker run --rm --tty --name dtr docker/dtr install --debug --ucp-url https://$(docker-machine ip ucp0):9443 --dtr-external-url https://$(docker-machine ip dtr0):443  --replica-http-port 8090 --replica-https-port 443 --ucp-node dtr0 --ucp-username "${UCP_ADMIN}" --ucp-password "${UCP_PASSWORD}" --ucp-insecure-tls --replica-id AB0000000000
 
     echo "--------------- Installing DTR nodes -------------"
     for (( COUNT=1; COUNT \< $2; COUNT++))
@@ -105,7 +105,7 @@ else
         echo "Something went wrong"
         exit $?
     else
-        echo "All done you now have a working DDC cluster. You can access UCP at https://$(docker-machine ip ucp0):9443, and DTR at https://$(docker-machine ip dtr0):8443 and the Visualiser at http://$(docker-machine ip ucp0):8082"
+        echo "All done you now have a working DDC cluster. You can access UCP at https://$(docker-machine ip ucp0):9443, and DTR at https://$(docker-machine ip dtr0):443 and the Visualiser at http://$(docker-machine ip ucp0):8082"
     fi
 fi
 
