@@ -56,6 +56,9 @@ else
 
     echo "Create vizualiser"
     docker-machine ssh ucp0 docker service create --name=viz --publish=8082:8080/tcp --constraint=node.role==manager --mount=type=bind,src=/var/run/docker.sock,dst=/var/run/docker.sock manomarks/visualizer
+
+    echo "Create minio S3 compatible file storage"
+    docker-machine ssh ucp0 docker service create -p 9000:9000 minio/minio server /export
 fi
 
 if [ $3 == 0 ]; then
@@ -86,7 +89,8 @@ else
     docker-machine ssh dtr0 docker swarm join --token $(docker-machine ssh ucp0 docker swarm join-token -q worker) $(docker-machine ip ucp0)
     echo "--------------- Installing DTR -----------"
     # Install DTR
-    docker-machine ssh ucp0 docker run --rm --tty --name dtr docker/dtr install --debug --ucp-url https://$(docker-machine ip ucp0):9443 --dtr-external-url https://$(docker-machine ip dtr0):8443  --replica-http-port 8090 --replica-https-port 8443 --ucp-node dtr0 --ucp-username "${UCP_ADMIN}" --ucp-password "${UCP_PASSWORD}" --ucp-insecure-tls --replica-id AB0000000000
+    # Adden 20170612 Well crap, it seems that docker login doesn't accept a port number at the moment, so I'll install DTR at the default port 443 (HTTPS)
+    docker-machine ssh ucp0 docker run --rm --tty --name dtr docker/dtr install --debug --ucp-url https://$(docker-machine ip ucp0):9443 --dtr-external-url https://$(docker-machine ip dtr0):443  --replica-http-port 8090 --replica-https-port 8443 --ucp-node dtr0 --ucp-username "${UCP_ADMIN}" --ucp-password "${UCP_PASSWORD}" --ucp-insecure-tls --replica-id AB0000000000
 
     echo "--------------- Installing DTR nodes -------------"
     for (( COUNT=1; COUNT \< $2; COUNT++))
@@ -94,7 +98,7 @@ else
         echo "Create DTR node $COUNT"
         docker-machine create -d virtualbox --virtualbox-memory "3072" dtr$COUNT && docker-machine ssh dtr$COUNT docker swarm join --token $(docker-machine ssh ucp0 docker swarm join-token -q worker) $(docker-machine ip ucp0)
         #docker-machine ssh dtr$COUNT docker run --rm --tty -p 809$COUNT:80 844$COUNT:443 docker/dtr join --debug --ucp-node dtr$COUNT --ucp-insecure-tls --ucp-url https://$(docker-machine ip ucp0) --ucp-username $UCP_ADMIN --ucp-password $UCP_PASSWORD --existing-replica-id 1234567890AB --replica-http-port "809$COUNT" --replica-https-port "844$COUNT" --replica-id AB000000000$COUNT
-        docker-machine ssh ucp0 docker run --rm --tty -p 809$COUNT:80 844$COUNT:443 docker/dtr join --debug --ucp-node dtr$COUNT --ucp-insecure-tls --ucp-url https://$(docker-machine ip ucp0):9443 --ucp-username "${UCP_ADMIN}" --ucp-password "${UCP_PASSWORD}" --existing-replica-id 1234567890AB --replica-http-port "809$COUNT" --replica-https-port "844$COUNT" --replica-id AB000000000$COUNT
+        docker-machine ssh ucp0 docker run --rm --tty -p 809$COUNT:80 844$COUNT:443 docker/dtr join --debug --ucp-node dtr$COUNT --ucp-insecure-tls --ucp-url https://$(docker-machine ip ucp0):9443 --ucp-username "${UCP_ADMIN}" --ucp-password "${UCP_PASSWORD}" --existing-replica-id 1234567890AB --replica-http-port "809$COUNT" --replica-https-port "44$COUNT" --replica-id AB000000000$COUNT
     done
 
     if [ $? -ne 0 ]; then
