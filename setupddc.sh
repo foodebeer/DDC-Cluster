@@ -89,8 +89,10 @@ else
     docker-machine ssh dtr0 docker swarm join --token $(docker-machine ssh ucp0 docker swarm join-token -q worker) $(docker-machine ip ucp0)
     echo "--------------- Installing DTR -----------"
     # Install DTR
-    # Adden 20170612 Well crap, it seems that docker login doesn't accept a port number at the moment, so I'll install DTR at the default port 443 (HTTPS)
-    docker-machine ssh ucp0 docker run --rm --tty --name dtr docker/dtr install --debug --ucp-url https://$(docker-machine ip ucp0):9443 --dtr-external-url https://$(docker-machine ip dtr0):443  --replica-http-port 8090 --replica-https-port 443 --ucp-node dtr0 --ucp-username "${UCP_ADMIN}" --ucp-password "${UCP_PASSWORD}" --ucp-insecure-tls --replica-id AB0000000000
+    # Added 20170612 Well crap, it seems that docker login doesn't accept a port number at the moment, so I'll install DTR at the default port 443 (HTTPS)
+    docker-machine ssh dtr0 docker run --rm --tty --name dtr docker/dtr install --debug --ucp-url https://$(docker-machine ip ucp0):9443 --dtr-external-url https://$(docker-machine ip dtr0)/ --ucp-node dtr0 --ucp-username "${UCP_ADMIN}" --ucp-password "${UCP_PASSWORD}" --ucp-insecure-tls --replica-id AB0000000000
+    # Copy-paste from UCP for reference
+    # docker run -it --rm docker/dtr install --dtr-external-url https://192.168.99.103/ --ucp-node dtr0 --ucp-username moby --ucp-insecure-tls --ucp-url https://192.168.99.100:9443
 
     echo "--------------- Installing DTR nodes -------------"
     for (( COUNT=1; COUNT \< $2; COUNT++))
