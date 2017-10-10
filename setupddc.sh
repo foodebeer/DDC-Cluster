@@ -26,6 +26,12 @@ fi
 if [ "$ENVWORKERLABEL" == "" ]; then
 	ENVWORKERLABEL="Test"
 fi
+if [ "$UCPVERSION" == "" ]; then
+	UCPVERSION="2.1.5"
+fi
+if [ "$DTRVERSION" == "" ]; then
+	DTRVERSION="2.2.7"
+fi
 
 
 
@@ -52,7 +58,7 @@ else
         docker-machine create -d virtualbox --virtualbox-memory "4096" ucp$COUNT && docker-machine ssh ucp$COUNT docker swarm join --token $(docker-machine ssh ucp0 docker swarm join-token -q manager) $(docker-machine ip ucp0)
     done
     echo "----------- Installing UCP ------------------"
-    docker-machine ssh ucp0 docker run --rm --tty --name ucp -v /var/run/docker.sock:/var/run/docker.sock docker/ucp install --host-address $(docker-machine ip ucp0) --admin-username "${UCP_ADMIN}" --admin-password "${UCP_PASSWORD}" --swarm-port 2378 --controller-port 9443
+    docker-machine ssh ucp0 docker run --rm --tty --name ucp -v /var/run/docker.sock:/var/run/docker.sock docker/ucp:$UCPVERSION install --host-address $(docker-machine ip ucp0) --admin-username "${UCP_ADMIN}" --admin-password "${UCP_PASSWORD}" --swarm-port 2378 --controller-port 9443
 
     echo "Create vizualiser"
     docker-machine ssh ucp0 docker service create --name=viz --publish=8082:8080/tcp --constraint=node.role==manager --mount=type=bind,src=/var/run/docker.sock,dst=/var/run/docker.sock manomarks/visualizer
