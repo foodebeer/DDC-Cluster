@@ -5,13 +5,23 @@ if [ $1 == "" ]; then
 	echo "Usage setup.sh <number of UCP nodes> <number of DTR nodes> <number of worker node>"
 	exit 1
 fi
-if [[ ${1:-0} == 0 ]]; then
+UCP_CNT=${1:-0}
+DTR_CNT=${2:-0}
+WORKER_CNT=${3:-0}
+
+#### Images used
+DTR_IMG=docker/dtr
+DTR_TAG=2.3.3
+DTR_SHA=6132eb90649dd8b2f7a2dcfe6385f712f2fd8990d7b848cd38d4e078fc33bc4c
+
+
+if [[ ${UCP_CNT} == 0 ]]; then
     echo "0 UCP nodes"
 fi
-if [[ ${2:-0} == 0 ]]; then
+if [[ ${DTR_CNT} == 0 ]]; then
     echo "0 DTR nodes"
 fi
-if [[ ${3:-0} == 0 ]]; then
+if [[ ${WORKER_CNT} == 0 ]]; then
     echo "0 worker nodes"
 fi
 
@@ -38,9 +48,9 @@ fi
 #echo "Using $UCP_ADMIN and $UCP_PASSWORD"
 UCP_EXISTS=$(docker-machine ls -q | grep -i ucp)
 echo $UCP_EXISTS
-if [ $1 == 0 ]; then
+if [ ${UCP_CNT} == 0 ]; then
 	echo "No UCP nodes specified, assuming existing UCP cluster"
-    if [ -n $UCP_EXISTS ]; then
+    if [[ "X${UCP_EXISTS}" == "X" ]]; then
         echo "No existing UCP nodes specified, I need them so exiting"
         exit -1
     fi
@@ -52,7 +62,7 @@ else
     echo "Swarm manager created"
 
     echo "Creating manager nodes"
-    for (( COUNT=1; COUNT \< $1; COUNT++))
+    for (( COUNT=1; COUNT \< ${UCP_CNT}; COUNT++))
     do
         echo "Creating UCP node $COUNT"
         docker-machine create -d virtualbox --virtualbox-memory "4096" ucp$COUNT && docker-machine ssh ucp$COUNT docker swarm join --token $(docker-machine ssh ucp0 docker swarm join-token -q manager) $(docker-machine ip ucp0)
@@ -61,30 +71,30 @@ else
     docker-machine ssh ucp0 docker run --rm --tty --name ucp -v /var/run/docker.sock:/var/run/docker.sock docker/ucp:$UCPVERSION install --host-address $(docker-machine ip ucp0) --admin-username "${UCP_ADMIN}" --admin-password "${UCP_PASSWORD}" --swarm-port 2378 --controller-port 9443
 
     echo "Create vizualiser"
-    docker-machine ssh ucp0 docker service create --name=viz --publish=8082:8080/tcp --constraint=node.role==manager --mount=type=bind,src=/var/run/docker.sock,dst=/var/run/docker.sock manomarks/visualizer
+    docker-machine ssh ucp0 docker service create --name=viz --publish=8082:8080/tcp --constraint=node.role==manager --mount=type=bind,src=/var/run/docker.sock,dst=/var/run/docker.sock dockersamples/visualizer
 
     echo "Create minio S3 compatible file storage"
-    docker-machine ssh ucp0 docker service create -p 9000:9000 minio/minio server /export
+    docker-machine ssh ucp0 docker service create --name=minio --no-healthcheck -e MINIO_ACCESS_KEY=minio -e MINIO_SECRET_KEY=miniostorage -p 9000:9000 minio/minio server /export
 fi
 
 if [ $3 == 0 ]; then
 	echo "No worker nodes specified, skipping"
 else
     # Worker nodes
-    echo "***************** Creating and joining $3 $ENVWORKERLABEL worker nodes to Swarm cluster"
+    echo "***************** Creating and joining ${WORKER_CNT} $ENVWORKERLABEL worker nodes to Swarm cluster"
     rm swarmnodes
     #COUNT = 0
-    for (( COUNT=0; COUNT < $3; COUNT++))
+    for (( COUNT=0; COUNT < ${WORKER_CNT}; COUNT++))
     do
         echo "Creating node$COUNT"
         docker-machine create -d virtualbox --engine-label environment=$ENVWORKERLABEL node$COUNT  && echo "Created node$COUNT" && echo node$COUNT >> swarmnodes && docker-machine ssh node$COUNT docker swarm join --token $(docker-machine ssh ucp0 docker swarm join-token -q worker) $(docker-machine ip ucp0)
     done
 fi
 
-if [ $2 == 0 ]; then
+if [ ${DTR_CNT} == 0 ]; then
 	echo "No DTR nodes specified"
 
-    echo "All done you now have a working DDC cluster. You can access UCP at https://$(docker-machine ip ucp0):9443, and the Visualiser at http://$(docker-machine ip ucp0):8082"
+    echo "All done! You now have a working DDC cluster. You can access UCP at https://$(docker-machine ip ucp0):9443, and the Visualiser at http://$(docker-machine ip ucp0):8082"
 	exit 1
 else
     echo "***************** Create DTR cluster"
@@ -93,6 +103,12 @@ else
     # Join Swarm
     echo "----------- DTR joining Swarm ---------"
     docker-machine ssh dtr0 docker swarm join --token $(docker-machine ssh ucp0 docker swarm join-token -q worker) $(docker-machine ip ucp0)
+    echo "--------------- Pulling DTR image-----------"
+    # Download dtr image
+		for SUB_IMG in api garant jobrunner nginx notary-server notary-signer postgres registry rethink;do
+			echo "Downloading docker/dtr-${SUB_IMG}:${DTR_TAG}"
+			docker-machine ssh dtr0 docker pull docker/dtr-${SUB_IMG}:${DTR_TAG}
+		done
     echo "--------------- Installing DTR -----------"
     # Install DTR
     # Added 20170612 Well crap, it seems that docker login doesn't accept a port number at the moment, so I'll install DTR at the default port 443 (HTTPS)
@@ -101,7 +117,7 @@ else
     # docker run -it --rm docker/dtr install --dtr-external-url https://192.168.99.103/ --ucp-node dtr0 --ucp-username moby --ucp-insecure-tls --ucp-url https://192.168.99.100:9443
 
     echo "--------------- Installing DTR nodes -------------"
-    for (( COUNT=1; COUNT \< $2; COUNT++))
+    for (( COUNT=1; COUNT \< ${DTR_CNT}; COUNT++))
     do
         echo "Create DTR node $COUNT"
         docker-machine create -d virtualbox --virtualbox-memory "3072" dtr$COUNT && docker-machine ssh dtr$COUNT docker swarm join --token $(docker-machine ssh ucp0 docker swarm join-token -q worker) $(docker-machine ip ucp0)
@@ -113,8 +129,7 @@ else
         echo "Something went wrong"
         exit $?
     else
-        echo "All done you now have a working DDC cluster. You can access UCP at https://$(docker-machine ip ucp0):9443, and DTR at https://$(docker-machine ip dtr0):443 and the Visualiser at http://$(docker-machine ip ucp0):8082"
+        echo "All done! You now have a working DDC cluster. You can access UCP at https://$(docker-machine ip ucp0):9443, and DTR at https://$(docker-machine ip dtr0):443 and the Visualiser at http://$(docker-machine ip ucp0):8082"
+				echo "   >> Minio (s3 compatible storage backend), can be accessed at  http://$(docker-machine ip ucp0):9000 (ACCESS_KEY=minio / SECURE_KEY=miniostorage)"
     fi
 fi
-
-
