@@ -8,12 +8,11 @@ fi
 UCP_CNT=${1:-0}
 DTR_CNT=${2:-0}
 WORKER_CNT=${3:-0}
-
-#### Images used
-DTR_IMG=docker/dtr
-DTR_TAG=2.3.3
-DTR_SHA=6132eb90649dd8b2f7a2dcfe6385f712f2fd8990d7b848cd38d4e078fc33bc4c
-
+: ${UCP_ADMIN:=moby}
+: ${UCP_PASSWORD:=d!ck1234}
+: ${ENVWORKERLABEL:=Test}
+: ${UCPVERSION:=2.1.5}
+: ${DTRVERSION:=2.2.7}
 
 if [[ ${UCP_CNT} == 0 ]]; then
     echo "0 UCP nodes"
@@ -25,29 +24,8 @@ if [[ ${WORKER_CNT} == 0 ]]; then
     echo "0 worker nodes"
 fi
 
-if [ "$UCP_ADMIN" == "" ]; then
-	UCP_ADMIN="moby"
-fi
-
-if [ "$UCP_PASSWORD" == "" ]; then
-	UCP_PASSWORD="d!ck1234"
-fi
-
-if [ "$ENVWORKERLABEL" == "" ]; then
-	ENVWORKERLABEL="Test"
-fi
-if [ "$UCPVERSION" == "" ]; then
-	UCPVERSION="2.1.5"
-fi
-if [ "$DTRVERSION" == "" ]; then
-	DTRVERSION="2.2.7"
-fi
-
-
-
 #echo "Using $UCP_ADMIN and $UCP_PASSWORD"
 UCP_EXISTS=$(docker-machine ls -q | grep -i ucp)
-echo $UCP_EXISTS
 if [ ${UCP_CNT} == 0 ]; then
 	echo "No UCP nodes specified, assuming existing UCP cluster"
     if [[ "X${UCP_EXISTS}" == "X" ]]; then
