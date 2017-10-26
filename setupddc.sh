@@ -11,8 +11,8 @@ WORKER_CNT=${3:-0}
 : ${UCP_ADMIN:=moby}
 : ${UCP_PASSWORD:=d!ck1234}
 : ${ENVWORKERLABEL:=Test}
-: ${UCPVERSION:=2.1.5}
-: ${DTRVERSION:=2.2.7}
+: ${UCPVERSION:=latest}
+: ${DTRVERSION:=latest}
 
 if [[ ${UCP_CNT} == 0 ]]; then
     echo "0 UCP nodes"
